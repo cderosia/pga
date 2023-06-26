@@ -1,29 +1,74 @@
 ---
-title: "pga_eda"
+title: "PGA EDA"
+author: "Carter DeRosia"
 output: html_document
 date: "2023-06-26"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+
+library(corrplot)
+
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r import}
+pga <- read_csv("AnalysisFile.csv")
+pga
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+```{r clean}
+pga$DOB <- mdy(pga$DOB)
+pga$date <- dmy(pga$date)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+
+pga$place[pga$place == 0] <- NA
+pga$`final position`[pga$`final position` == 0] <- NA
+pga$Finish[pga$Finish == 0] <- NA
+pga
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r finish vs drive yards}
+pga %>%
+  ggplot(aes(x = `Drive Yards`, y = Finish)) + geom_point() + geom_smooth()
+  
+```
+
+
+```{r fairways hit vs drive yards}
+pga %>%
+  ggplot(aes(`Drive Yards`, `Fairways Hit`)) + geom_point() + geom_smooth()
+```
+```{r putts per hole vs fairways hit}
+pga %>%
+  ggplot(aes(`Fairways Hit`, `PUTTS/HOLE`)) + geom_point() + geom_smooth()
+```
+
+```{r made cuts vs not}
+pga %>%
+  group_by(made_cut) %>%
+  summarize(mean_drive_dist = mean(`Drive Yards`, na.rm = TRUE), mean_fairways = mean(`Fairways Hit`, na.rm = TRUE), mean_putts_per_hole = mean(`PUTTS/HOLE`, na.rm = TRUE))
+```
+
+
+```{r}
+pga
+```
+
+
+```{r heatmap}
+#
+pga_heatmap <- pga %>%
+  select(Age, `final position`, major, `Consecutive_Cuts_Made`, Score, sg_putt, sg_arg, sg_app, sg_ott, sg_t2g, sg_total, sg_putt_prev, sg_arg_prev, sg_app_prev, sg_ott_prev, sg_t2g_prev, sg_total_prev, `Drive Yards`, `Fairways Hit`, `PUTTS/HOLE` )
+
+pga_heatmap <- na.omit(pga_heatmap)
+corr <- cor(pga_heatmap)
+corrplot(corr, method = "color")
+```
+
