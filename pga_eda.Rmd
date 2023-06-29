@@ -2,41 +2,91 @@
 title: "PGA EDA"
 author: "Carter DeRosia"
 output: html_document
-date: "2023-06-26"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(tidyverse)
-library(lubridate)
+## 1. Examining the Data
 
-library(corrplot)
+### About the Dataset
+
+This dataset was put together by Billy Kilduff in 2021. This data includes player statistics for each tournament from 2018 through 2021. You can find the raw dataset here: https://doi.org/10.5281/zenodo.5235684
+
+### About the File
+
+The csv file has 64 columns. I will describe the columns that are most relevant to my analysis.
+
+1. `Player`: Name of golfer
+2. `player id`: unique player ID
+3. `tournament id`: unique tournament ID
+4. `season`: year of season
+5. `final position`: final position player ended up in 
+6. `major`: indicates if tournament is one of the 4 major tournaments (The Masters, PGA Championship, U.S. Open, The Open Championship)
+7. `made cut`: indicates if the player made the cut (A typical pga tournament is 4 days long. After the second day the field of players is "cut" down to the top 55 or so players. A player only wins prize money if they make the cut)
+8. `consecutive cuts made`: the number of consecutive cuts a player has coming into a tournament
+9. `score`: players score relative to par (positive number means over par, negative means under par)
+10. `sg_putt`: Strokes gained putting: measures how many strokes a player gained (or lost) on the green
+11. `sg_arg`:  Strokes gained around-the-green: measures how many strokes a player gained (or lost) on shots within 30 yards of the green, not including any shots on the green
+12. `sg_app`: Strokes gained approach: measures how many strokes a player gained (or lost) on all shots that are not off from the tee on par-4 or par-5 holes and are not included in sg_arg or sg_putt. Tee shots on par-3 holes are included.
+13. `sg_ott`: Strokes gained off the tee: measures how many strokes a player gained (or lost) on shots off the tee on all par-4 and par-5 holes. 
+14. `sg_t2g`: Strokes gained tee-to-green: measures how many strokes a player gained (or lost) on all shots taken by a player from the tee box to the green
+15. `sg_total`: Strokes gained total: aggregate of all sg_statistics for a givevn tournament
+16. `sg_stat_prev`: strokes gained for a respective measure in the previous tournament 
+17. `Drive Yards`: the average distance with a driver 
+18. `Fairways Hit`: percentage of fairways hit off the tee
+19. `PUTTS/HOLE`: average number of putts per hole
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 
 ```
 
+### Importing Packages
+```{r import packages}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(corrplot))
+```
 
-```{r import}
+
+### Loading Data
+```{r loading data}
 pga <- read_csv("AnalysisFile.csv")
 pga
 ```
 
 
+## 2. Data Cleaning
 ```{r clean}
+# standardizing date formats to yyyy-mm-dd
 pga$DOB <- mdy(pga$DOB)
 pga$date <- dmy(pga$date)
 
-
-pga$place[pga$place == 0] <- NA
+# replacing any 0 value in the `final position` column to be NA since 0th place does not make sense. Any 0 in this column means that the player either missed the cut, withdrew, or was disqualified so I will ignore those values. 
 pga$`final position`[pga$`final position` == 0] <- NA
-pga$Finish[pga$Finish == 0] <- NA
-pga
 
+# removing columns that I am not interested in digging deeper into
+pga <- pga %>%
+  select(-c(FariwaysGrass, GreensGrass, windspeedKmph, winddirDegree, visibility, tempC, pressure, precipMM, humidity, cloudcover, WindGustKmph, WindChillC, HeatIndexC, FeelsLikeC, DewPointC, sunset, sunrise, moonset, moonrise, moon_illumination, uvIndex, sunHour, totalSnow_cm, mintempC, maxtempC, Finish, place, `Number of Rounds`, course, `tournament name`))
+
+
+
+# adding a WIN column which indicates if a player won the tournament
+pga <- pga %>%
+  mutate(Win = if_else(`final position` == 1, 1, 0))
+
+```
+
+```{r}
+pga
+```
+
+
+```{r}
+summary(pga)
 ```
 
 
 ```{r finish vs drive yards}
 pga %>%
-  ggplot(aes(x = `Drive Yards`, y = Finish)) + geom_point() + geom_smooth()
+  ggplot(aes(x = `Drive Yards`, y = `final position`)) + geom_point() + geom_smooth()
   
 ```
 
