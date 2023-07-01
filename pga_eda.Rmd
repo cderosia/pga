@@ -147,7 +147,7 @@ pga %>%
 
 **During this time period (2017-2020), Dustin Johnson and Justin Thomas are tied for the most wins with 7 each. Bryson DeChambeau is close behind them with 6 and Brooks Koepka and Rory McIlroy both have 5 wins each.**
 
-5. Who has won the most majors in this time period?
+### 5. Who has won the most majors in this time period?
 ```{r}
 pga %>%
   group_by(player) %>%
