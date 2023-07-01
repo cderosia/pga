@@ -4,11 +4,11 @@ author: "Carter DeRosia"
 output: html_document
 ---
 
-## 1. Examining the Data
+# 1. Examining the Data
 
 ### About the Dataset
 
-This dataset was put together by Billy Kilduff in 2021. This data includes player statistics for each tournament from 2018 through 2021. You can find the raw dataset here: https://doi.org/10.5281/zenodo.5235684
+This dataset was put together by Billy Kilduff in 2021. This data includes player statistics for each tournament from 2017 through 2020. You can find the raw dataset here: https://doi.org/10.5281/zenodo.5235684
 
 ### About the File
 
@@ -53,7 +53,7 @@ pga
 ```
 
 
-## 2. Data Cleaning
+# 2. Data Cleaning
 ```{r clean}
 # standardizing date formats to yyyy-mm-dd
 pga$DOB <- mdy(pga$DOB)
@@ -64,7 +64,7 @@ pga$`final position`[pga$`final position` == 0] <- NA
 
 # removing columns that I am not interested in digging deeper into
 pga <- pga %>%
-  select(-c(FariwaysGrass, GreensGrass, windspeedKmph, winddirDegree, visibility, tempC, pressure, precipMM, humidity, cloudcover, WindGustKmph, WindChillC, HeatIndexC, FeelsLikeC, DewPointC, sunset, sunrise, moonset, moonrise, moon_illumination, uvIndex, sunHour, totalSnow_cm, mintempC, maxtempC, Finish, place, `Number of Rounds`, course, `tournament name`))
+  select(-c(FariwaysGrass, GreensGrass, windspeedKmph, winddirDegree, visibility, tempC, pressure, precipMM, humidity, cloudcover, WindGustKmph, WindChillC, HeatIndexC, FeelsLikeC, DewPointC, sunset, sunrise, moonset, moonrise, moon_illumination, uvIndex, sunHour, totalSnow_cm, mintempC, maxtempC, Finish, place, course))
 
 
 
@@ -72,18 +72,38 @@ pga <- pga %>%
 pga <- pga %>%
   mutate(Win = if_else(`final position` == 1, 1, 0))
 
+# adding a major_win column which indicates if a player won a tournament and that tournament was a major.
+pga <- pga %>%
+  mutate(major_win = if_else(Win == 1 & major == 1, 1, 0))
+  
+pga <- pga %>%
+  distinct(player, date, `tournament name`, .keep_all = TRUE)
+
 ```
 
 ```{r}
-pga
+pga 
 ```
 
 
-```{r}
-summary(pga)
-```
+# 3. EDA
+
+A few questions would like to investigate
+
+1. How does driving distance impact final position?
+2. How does fairways hit impact final position?
+3. How does putts/hole impact final position?
+4. Who has won the most tournaments in this time period?
+5. Who has won the most majors in this time period?
+6. Who is the best at each part of the game? (ott, t2g, app, arg, putt)
+7. Where are winners gaining the most strokes?
+8. How does age impact driving distance, fairways hit, and putting?
+9. Are players hitting the ball longer over time?
+10. Correlation between all numeric parameters.
 
 
+
+### 1. How does driving distance impact final position?
 ```{r finish vs drive yards}
 pga %>%
   ggplot(aes(x = `Drive Yards`, y = `final position`)) + geom_point() + geom_smooth()
@@ -91,31 +111,173 @@ pga %>%
 ```
 
 
+**We can see that generally, the farther a player hits the ball, the better final position they end up in.**
+
+
+### 2. How does fairways hit impact final position?
 ```{r fairways hit vs drive yards}
 pga %>%
-  ggplot(aes(`Drive Yards`, `Fairways Hit`)) + geom_point() + geom_smooth()
-```
-```{r putts per hole vs fairways hit}
-pga %>%
-  ggplot(aes(`Fairways Hit`, `PUTTS/HOLE`)) + geom_point() + geom_smooth()
+  ggplot(aes(`Fairways Hit`, `final position`)) + geom_point() + geom_smooth()
 ```
 
-```{r made cuts vs not}
+
+**It appears that players who miss a lot of fairways (40% - 55% hit) struggle to place as well as those who hit more. However, we see that once you get past about 60% fairways hit, there's no clear trend to say that the more fairways hit, the better you'll place. In fact, it appears that those who hit 60% of fairways actually tend to place better than those who hit 70% of fairways which is an interesting finding. I am very interested as to why that is.**  
+
+
+
+### 3. How does putts/hole impact final position?
+```{r}
 pga %>%
-  group_by(made_cut) %>%
-  summarize(mean_drive_dist = mean(`Drive Yards`, na.rm = TRUE), mean_fairways = mean(`Fairways Hit`, na.rm = TRUE), mean_putts_per_hole = mean(`PUTTS/HOLE`, na.rm = TRUE))
+  ggplot(aes(`PUTTS/HOLE`, `final position`)) + geom_point() + geom_jitter() + geom_smooth()
+```
+
+
+**The findings here are pretty close to what you would expect. Those who are taking less putts per hole are placing better than those who take more putts. This is quite trivial since the number of putts per hole is directly related to total number of strokes and the less strokes someone takes the better they will place.**
+
+
+### 4. Who has won the most tournaments in this time period?
+```{r}
+pga %>%
+  group_by(`player`) %>%
+  summarize(number_of_wins = sum(Win, na.rm = TRUE)) %>%
+  arrange(desc(number_of_wins))
+```
+
+
+
+**During this time period (2017-2020), Dustin Johnson and Justin Thomas are tied for the most wins with 7 each. Bryson DeChambeau is close behind them with 6 and Brooks Koepka and Rory McIlroy both have 5 wins each.**
+
+5. Who has won the most majors in this time period?
+```{r}
+pga %>%
+  group_by(player) %>%
+  summarize(number_of_major_wins = sum(major_win, na.rm = TRUE)) %>%
+  arrange(desc(number_of_major_wins))
+```
+
+
+
+**Brooks Koepka has the most major wins during this time period with 3. Bryson DeChambeau, Collin Morikawa, Francesco Molinari, Gary Woodland, Patrick Reed, Shane Lowry, and Tiger Woods all have 1 each.**
+
+
+### 6. Who is the best at each part of the game? (ott, t2g, app, arg, putt)
+
+```{r}
+# removing any player who only played in one tournaments. 
+pga_filtered <- pga %>%
+  group_by(player) %>%
+  filter(n() > 1)
+
+
+# finding the player who has the best average of strokes gained off the tee (sg_ott)
+pga_filtered %>%
+  group_by(player) %>%
+  summarize(avg_sg_ott = mean(sg_ott, na.rm = TRUE)) %>%
+  arrange(desc(avg_sg_ott))
+  
+```
+```{r}
+#finding the player who has the best average strokes gained tee to green (sg_t2g)
+pga_filtered %>%
+  group_by(player) %>%
+  summarize(avg_sg_t2g = mean(sg_t2g, na.rm = TRUE)) %>%
+  arrange(desc(avg_sg_t2g))
+
+```
+```{r}
+#finding the player who has the best average strokes gained approach (sg_app)
+pga_filtered %>%
+  group_by(player) %>%
+  summarize(avg_sg_app = mean(sg_app, na.rm = TRUE)) %>%
+  arrange(desc(avg_sg_app))
+
 ```
 
 
 ```{r}
-pga
+#finding the player who has the best average strokes gained around the green (sg_arg)
+pga_filtered %>%
+  group_by(player) %>%
+  summarize(avg_sg_arg = mean(sg_arg, na.rm = TRUE)) %>%
+  arrange(desc(avg_sg_arg))
+
+```
+```{r}
+#finding the player who has the best average strokes gained around the green (sg_putt)
+pga_filtered %>%
+  group_by(player) %>%
+  summarize(avg_sg_putt = mean(sg_putt, na.rm = TRUE)) %>%
+  arrange(desc(avg_sg_putt))
+```
+**We can see that during this time period, the following players lead their respective strokes gained statistic:**
+
+ * SG_OTT: Rory McIlroy (0.84)
+ 
+ * SG_T2G: Justin Thomas (1.627)
+ 
+ * SG_APP: Henrik Stenson	(0.96)
+ 
+ * SG_ARG: Daniel Chopra (0.533)
+ 
+ * SG_PUTT: Denny McCarthy	(0.678)
+ 
+ 
+ 
+ 
+### 7. Where are winners gaining the most strokes?
+```{r}
+pga %>%
+  group_by(Win) %>%
+  summarize(mean_sg_ott = mean(sg_ott, na.rm = TRUE), mean_sg_app = mean(sg_app, na.rm = TRUE), mean_sg_arg = mean(sg_arg, na.rm = TRUE), mean_sg_putt = mean(sg_putt, na.rm = TRUE))
+```
+**From this table, we can see a few things. First off, winners typically gain 0.59 strokes of the tee, 1.088 strokes on approach shots, 0.262 strokes around the green, and 1.04 strokes putting. This provides some very interesting results. Golfers who are winning tournaments are gaining the most strokes on their approach shots and putting. There is still a clear increase in strokes gained off the tee for winners vs non winners but the difference is only about half as much as off the tee and putting. When looking at strokes gained around the green we see there is only a relatively small difference between winners and losers. This shows that the average PGA Tour player should focus on approach shots and putting in order to have better chance at winning tournaments. **
+
+
+### 8. How does age impact driving distance, fairways hit, and putting?
+
+```{r}
+pga %>%
+  ggplot(aes(Age, `Drive Yards`)) + geom_point() + geom_smooth()
+```
+
+```{r}
+pga %>%
+  ggplot(aes(Age, `Fairways Hit`)) + geom_point() + geom_smooth()
+```
+
+```{r}
+pga %>%
+  ggplot(aes(Age, `PUTTS/HOLE`)) + geom_point() + geom_smooth()
 ```
 
 
+**It looks like the older a player is, they tend to hit it shorter than those younger than them. For fairway hit percentage, it seems to stay pretty constant across the ages until we get to about 55, where we see a big increase in fairway hit percentage. For number of putts per hole we see that there is a slight increase as age increases until about 55 again where there is a large decrease.**
+
+
+### 9. Are players hitting the ball longer over time?
+
+```{r}
+avg_drive_pga <- pga %>%
+  mutate(year = year(date)) %>%
+  group_by(year) %>%
+  summarize(avg_drive_distance = mean(`Drive Yards`, na.rm = TRUE))
+avg_drive_pga
+
+avg_drive_pga %>%
+  ggplot(aes(year, avg_drive_distance, fill = year)) + geom_col()
+```
+
+
+**From both the histogram and the table it appears that there is not a clear trend to suggest an increase in driving distance over time. There is about a 0.5 yard increase between 2017 and 2018. Then between 2018 and 2019 we see about a 1.2 yard decrease. Lastly, between 2019 and 2020 we see about a 1.4 yard increase. From this data it is hard to say if players are getting longer year after year. It would make more sense to look at this question over a longer period of time to determine this. ** 
+
+
+
+### 10. Correlation between all numeric parameters.
+
 ```{r heatmap}
-#
+
 pga_heatmap <- pga %>%
-  select(Age, `final position`, major, `Consecutive_Cuts_Made`, Score, sg_putt, sg_arg, sg_app, sg_ott, sg_t2g, sg_total, sg_putt_prev, sg_arg_prev, sg_app_prev, sg_ott_prev, sg_t2g_prev, sg_total_prev, `Drive Yards`, `Fairways Hit`, `PUTTS/HOLE` )
+  select(Age, `final position`, major, `Consecutive_Cuts_Made`, Score, sg_putt, sg_arg, sg_app, sg_ott, sg_t2g, sg_total, sg_putt_prev, sg_arg_prev, sg_app_prev, sg_ott_prev, sg_t2g_prev, sg_total_prev, `Drive Yards`, `Fairways Hit`, `PUTTS/HOLE`, Win )
 
 pga_heatmap <- na.omit(pga_heatmap)
 corr <- cor(pga_heatmap)
