@@ -1,4 +1,4 @@
-# pga
+# PGA EDA
 EDA of PGA Tournament Data
 
 I have been an avid golfer my entire life. I have enjoyed both watching and playing golf. 
@@ -8,6 +8,10 @@ I have always been interested in digging deeper analytically into professional g
 I did this project independently aside from data collection. 
 The data I used was gathered by Billy Kilduff in 2021 and is cited below. 
 This data set contains data from 2018-2021.
+
+You can view the raw code via the Rmd file. 
+You can view the raw data via the csv file.
+You can view the complete analysis via the html file. 
 
 I answer various questions that I came up with in order to further understand the data. At this current point in time, I do not have the necessary machine learning knowledge to model and predict, however I am currently learning those skills and when I feel like I've learned what I need to, I will come back to this project and build simple predictive models for this data. 
 
