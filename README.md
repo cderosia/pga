@@ -2,7 +2,7 @@
 EDA of PGA Tournament Data
 
 I have been an avid golfer my entire life. I have enjoyed both watching and playing golf. 
-At the time of this project I still compete in amatuer tournaments at local, state, and antional level. 
+At the time of this project I still compete in amatuer tournaments at local, state, and national level. 
 I have always been interested in digging deeper analytically into professional golf statistics.
 
 I did this project independently aside from data collection. 
