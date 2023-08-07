@@ -1,5 +1,5 @@
 # PGA EDA
-EDA of PGA Tournament Data
+Exploratory Data Analysis of PGA Tournament Data using R
 
 I have been an avid golfer my entire life. I have enjoyed both watching and playing golf. 
 At the time of this project I still compete in amatuer tournaments at local, state, and national level. 
