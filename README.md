@@ -1,4 +1,4 @@
-# PGA EDA
+# PGA NN & EDA
 Neural Network and Exploratory Data Analysis of PGA Tournament Data using R and Python
 
 I have been an avid golfer my entire life. I have enjoyed both watching and playing golf. 
