@@ -14,7 +14,7 @@ You can view the raw data via the csv file.
 You can view the complete analysis via the html file. 
 
 I answer various questions that I came up with in order to further understand the data. 
-I then build a simple Neural Network using TensorFlor and Keras to predict whether or not a player won a tournament given his stats from that tournament. When testing against unseen data, my model has an accuracy of 99% on classifying Win or not.
+I then build a simple Neural Network using TensorFlor and Keras to predict whether or not a player won a tournament given his stats. When testing against unseen data, my model has an accuracy of 67% on classifying Win or not.
 
 
 Billy Kilduff. (2021). PGA Tour Data Set - 2018 to 2021 [Data set]. Zenodo. https://doi.org/10.5281/zenodo.5235684
